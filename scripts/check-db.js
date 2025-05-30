@@ -11,6 +11,7 @@ if (process.env.SKIP_DB_CHECK) {
 }
 
 function getDatabaseType(url = process.env.DATABASE_URL) {
+  console.log('Database type detected:', url);
   const type = url && url.split(':')[0];
 
   if (type === 'postgres') {
@@ -40,6 +41,7 @@ async function checkEnv() {
 
 async function checkConnection() {
   try {
+    console.log('Checking connection to the database...');
     await prisma.$connect();
 
     success('Database connection successful.');
