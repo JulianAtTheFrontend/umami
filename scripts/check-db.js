@@ -42,6 +42,7 @@ async function checkEnv() {
 async function checkConnection() {
   try {
     console.log('Checking connection to the database...');
+    console.log(process.env.DATABASE_URL);
     await prisma.$connect();
 
     success('Database connection successful.');
