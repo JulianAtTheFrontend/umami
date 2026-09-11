@@ -123,6 +123,9 @@ export const EVENT_TYPE = {
   performance: 5,
 } as const;
 
+export const ACTIVE_TIME_EVENT = 'active-time';
+export const ACTIVE_TIME_PROPERTY = 'seconds';
+
 export const HEATMAP_EVENT_TYPE = {
   click: 1,
   scroll: 2,

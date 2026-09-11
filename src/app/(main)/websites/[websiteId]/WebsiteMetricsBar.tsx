@@ -1,9 +1,20 @@
 import { LoadingPanel } from '@/components/common/LoadingPanel';
 import { useDateRange, useMessages } from '@/components/hooks';
+import { useWebsiteActiveTimeQuery } from '@/components/hooks/queries/useWebsiteActiveTimeQuery';
 import { useWebsiteStatsQuery } from '@/components/hooks/queries/useWebsiteStatsQuery';
 import { MetricCard } from '@/components/metrics/MetricCard';
 import { MetricsBar } from '@/components/metrics/MetricsBar';
 import { formatLongNumber, formatShortTime } from '@/lib/format';
+
+interface WebsiteMetric {
+  label: string;
+  value: number;
+  prev?: number;
+  change: number;
+  formatValue: (value: number) => string;
+  reverseColors?: boolean;
+  tooltip?: string;
+}
 
 export function WebsiteMetricsBar({
   websiteId,
@@ -19,10 +30,28 @@ export function WebsiteMetricsBar({
     websiteId,
     compare: compareMode ? dateCompare?.compare : undefined,
   });
+  const { data: activeTime } = useWebsiteActiveTimeQuery({
+    websiteId,
+    compare: compareMode ? dateCompare?.compare : undefined,
+  });
 
   const { pageviews, visitors, visits, bounces, totaltime, comparison } = data || {};
 
-  const metrics = data
+  const activeTimeMetric: WebsiteMetric | undefined =
+    activeTime && activeTime.visits > 0
+      ? {
+          label: 'Ø Aktivzeit / qualifizierter Besuch',
+          tooltip:
+            'Sichtbare Zeit mit einer manuellen Interaktion innerhalb der vergangenen Minute.',
+          value: activeTime.average,
+          prev: activeTime.comparison.average,
+          change: activeTime.average - activeTime.comparison.average,
+          formatValue: (n: number) =>
+            `${+n < 0 ? '-' : ''}${formatShortTime(Math.abs(~~n), ['m', 's'], ' ')}`,
+        }
+      : undefined;
+
+  const metrics: WebsiteMetric[] | null = data
     ? [
         {
           value: visitors,
@@ -60,6 +89,7 @@ export function WebsiteMetricsBar({
           formatValue: n =>
             `${+n < 0 ? '-' : ''}${formatShortTime(Math.abs(~~n), ['m', 's'], ' ')}`,
         },
+        ...(activeTimeMetric ? [activeTimeMetric] : []),
       ]
     : null;
 
@@ -72,7 +102,7 @@ export function WebsiteMetricsBar({
       minHeight="136px"
     >
       <MetricsBar>
-        {metrics?.map(({ label, value, prev, change, formatValue, reverseColors }) => {
+        {metrics?.map(({ label, value, prev, change, formatValue, reverseColors, tooltip }) => {
           return (
             <MetricCard
               key={label}
@@ -82,6 +112,7 @@ export function WebsiteMetricsBar({
               change={change}
               formatValue={formatValue}
               reverseColors={reverseColors}
+              tooltip={tooltip}
               showChange={!isAllTime}
             />
           );

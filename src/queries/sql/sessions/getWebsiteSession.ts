@@ -33,7 +33,7 @@ async function relationalQuery(websiteId: string, sessionId: string) {
       count(distinct visit_id) as visits,
       sum(views) as views,
       sum(events) as events,
-      sum(${getTimestampDiffSQL('min_time', 'max_time')}) as "totaltime" 
+      coalesce(sum(${getTimestampDiffSQL('min_time', 'max_time')}), 0) as "totaltime"
     from (select
           session.session_id as id,
           session.distinct_id,
@@ -47,8 +47,8 @@ async function relationalQuery(websiteId: string, sessionId: string) {
           session.country,
           session.region,
           session.city,
-          min(website_event.created_at) as min_time,
-          max(website_event.created_at) as max_time,
+          min(case when website_event.event_type NOT IN (${EVENT_TYPE.customEvent}, ${EVENT_TYPE.performance}) then website_event.created_at end) as min_time,
+          max(case when website_event.event_type NOT IN (${EVENT_TYPE.customEvent}, ${EVENT_TYPE.performance}) then website_event.created_at end) as max_time,
           sum(case when website_event.event_type = ${EVENT_TYPE.pageView} then 1 else 0 end) as views,
           sum(case when website_event.event_type = ${EVENT_TYPE.customEvent} then 1 else 0 end) as events
     from session
@@ -85,7 +85,7 @@ async function clickhouseQuery(websiteId: string, sessionId: string) {
       uniq(visit_id) visits,
       sum(views) as views,
       sum(events) as events,
-      sum(max_time-min_time) as totaltime
+      ifNull(sum(max_time-min_time), 0) as totaltime
     from (select
               session_id as id,
               distinct_id as distinctId,
@@ -99,8 +99,8 @@ async function clickhouseQuery(websiteId: string, sessionId: string) {
               country,
               region,
               city,
-              min(min_time) as min_time,
-              max(max_time) as max_time,
+              minIf(min_time, event_type NOT IN (${EVENT_TYPE.customEvent}, ${EVENT_TYPE.performance})) as min_time,
+              maxIf(max_time, event_type NOT IN (${EVENT_TYPE.customEvent}, ${EVENT_TYPE.performance})) as max_time,
               sum(views) as views,
               length(groupArrayArray(event_name)) as events
         from website_event_stats_hourly

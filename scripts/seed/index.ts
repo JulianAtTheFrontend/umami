@@ -280,9 +280,12 @@ function createPrismaClient(): PrismaClient {
   }
 
   let schema: string | undefined;
+  let sslmode: string | null = null;
+
   try {
     const connectionUrl = new URL(url);
     schema = connectionUrl.searchParams.get('schema') ?? undefined;
+    sslmode = connectionUrl.searchParams.get('sslmode');
   } catch {
     throw new Error(
       'DATABASE_URL is not a valid URL.\n' +
@@ -291,7 +294,13 @@ function createPrismaClient(): PrismaClient {
     );
   }
 
-  const adapter = new PrismaPg({ connectionString: url }, { schema });
+  const adapter = new PrismaPg(
+    {
+      connectionString: url,
+      ...(sslmode === 'no-verify' && { ssl: { rejectUnauthorized: false } }),
+    },
+    { schema },
+  );
 
   return new PrismaClient({
     adapter,
