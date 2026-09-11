@@ -82,7 +82,7 @@ export function SessionProfile({
                 <TextField label="ID" value={data?.id} allowCopy />
               </Column>
             </Row>
-            <SessionStats data={data} websiteId={websiteId} sessionId={sessionId} />
+            <SessionStats data={data} />
             <SessionInfo data={data} />
 
             <Tabs>
